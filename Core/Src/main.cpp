@@ -21,8 +21,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <map>
-#include <vector>
-//#include <string>
+//#include <vector>
+#include <string>
 #include <cctype>
 
 using namespace std;
@@ -58,10 +58,9 @@ static void MX_GPIO_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-vector<vector<char*>> TextToMorseCode(char *text) {
-	vector<vector<char*>> result;
-	vector<char*> word;
-	map<char, char*> morse {
+string TextToMorseCode(string text) {
+	string result = "";
+	map<char, string> morse {
 		{'a',".-"}, {'b',"-..."}, {'c',"-.-."}, {'d',"-.."}, {'e',"."}, {'f',"..-."}, {'g',"--."},
 		{'h',"...."}, {'i',".."}, {'j',".---"}, {'k',"-.-"}, {'l',".-.."}, {'m',"--"}, {'n',"-."},
 		{'o',"---"}, {'p',".--."}, {'q',"--.-"}, {'r',".-."}, {'s',"..."}, {'t',"-"},
@@ -70,19 +69,15 @@ vector<vector<char*>> TextToMorseCode(char *text) {
 		{'5',"....."}, {'6',"-...."}, {'7',"--..."}, {'8',"---.."}, {'9',"----."}
 	};
 
-	for (char *c = text; *c != '\0'; c++) {
-		if (isalpha(*c) || isdigit(*c))
-			word.push_back(morse[*c]);
-		else if (*c == ' ') {
-			result.push_back(word);
-			word.clear();
+	for (char c : text) {
+		if (isalpha(c) || isdigit(c)) {
+			result += morse[c];
+		} else {
+			result += '/';
 		}
-		else {
-			//cout << "unrecognized character" << endl;
-			//break;
-		}
-
+		result += ' ';
 	}
+
 	return result;
 }
 
@@ -94,9 +89,10 @@ vector<vector<char*>> TextToMorseCode(char *text) {
  * space between words = 200 * 7 = 1400ms
  *
 */
-void blinkLetter(char* word) {
-	for (char *letter = word; *letter != '\0'; letter++) {
-		switch (*letter) {
+
+void blinkLED(string code) {
+	for (char c : code) {
+		switch (c) {
 			case '.':
 				HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 				HAL_Delay(200);
@@ -107,24 +103,15 @@ void blinkLetter(char* word) {
 				HAL_Delay(600);
 				HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 				break;
+			case ' ': // in-between letters
+				HAL_Delay(200);
+				break;
+			case '/': // in-between words
+				HAL_Delay(1400);
+				break;
 			default:
 				break;
-			HAL_Delay(200);
 		}
-	}
-}
-
-void blinkWord(vector<char*> words) {
-	for (char *word : words)
-	{
-		blinkLetter(word);
-		HAL_Delay(1200);
-	}
-}
-
-void blinkLED(vector<vector<char*>> morse) {
-	for (vector<char*> words : morse) {
-		blinkWord(words);
 	}
 }
 
@@ -160,7 +147,9 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-  char val[] = "hello world";
+  // TODO: add UART stuff
+  string val = "hello world";
+  string morse = TextToMorseCode(val);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -171,7 +160,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == 0) {
-		vector<vector<char*>> morse = TextToMorseCode(val);
 		blinkLED(morse);
 	}
   }
